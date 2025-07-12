@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>총게임(슈팅 게임)</title>
+  <style>
+    body { background: #222; margin:0; }
+    #gameArea {
+      position: relative;
+      width: 600px;
+      height: 400px;
+      margin: 50px auto;
+      background: #333;
+      overflow: hidden;
+      border: 2px solid #fff;
+    }
+    #player {
+      position: absolute;
+      left: 280px;
+      bottom: 10px;
+      width: 40px;
+      height: 40px;
+      background: #4caf50;
+      border-radius: 8px;
+    }
+    .bullet {
+      position: absolute;
+      width: 8px;
+      height: 18px;
+      background: #ffd700;
+      border-radius: 4px;
+    }
+    .enemy {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      background: #e74c3c;
+      border-radius: 50%;
+    }
+    #score {
+      color: #fff;
+      text-align: center;
+      font-size: 24px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="gameArea">
+    <div id="player"></div>
+  </div>
+  <div id="score">점수: 0</div>
+  <script>
+    const gameArea = document.getElementById('gameArea');
+    const player = document.getElementById('player');
+    const scoreDiv = document.getElementById('score');
+    let score = 0;
+    let gameOver = false;
+    const targetScore = 10; // 목표 점수
+
+    // 플레이어 좌우 이동
+    document.addEventListener('mousemove', (e) => {
+      const rect = gameArea.getBoundingClientRect();
+      let x = e.clientX - rect.left - 20;
+      if (x < 0) x = 0;
+      if (x > 560) x = 560;
+      player.style.left = x + 'px';
+    });
+
+    // 총알 발사
+    gameArea.addEventListener('click', () => {
+      if (gameOver) return;
+      const bullet = document.createElement('div');
+      bullet.className = 'bullet';
+      bullet.style.left = (player.offsetLeft + 16) + 'px';
+      bullet.style.bottom = '50px';
+      gameArea.appendChild(bullet);
+
+      function moveBullet() {
+        if (gameOver) {
+          bullet.remove();
+          return;
+        }
+        let bottom = parseInt(bullet.style.bottom);
+        bottom += 10;
+        bullet.style.bottom = bottom + 'px';
+        if (bottom > 400) {
+          bullet.remove();
+        } else {
+          // 적과 충돌 체크
+          document.querySelectorAll('.enemy').forEach(enemy => {
+            const bRect = bullet.getBoundingClientRect();
+            const eRect = enemy.getBoundingClientRect();
+            if (
+              bRect.left < eRect.right &&
+              bRect.right > eRect.left &&
+              bRect.top < eRect.bottom &&
+              bRect.bottom > eRect.top
+            ) {
+              enemy.remove();
+              bullet.remove();
+              score++;
+              scoreDiv.textContent = '점수: ' + score;
+              if (score >= targetScore) {
+                gameOver = true;
+                scoreDiv.textContent = '게임 클리어! 점수: ' + score + ' (새로고침으로 재시작)';
+              }
+            }
+          });
+          if (!gameOver) requestAnimationFrame(moveBullet);
+        }
+      }
+      requestAnimationFrame(moveBullet);
+    });
+
+    // 적 생성
+    function createEnemy() {
+      if (gameOver) return;
+      const enemy = document.createElement('div');
+      enemy.className = 'enemy';
+      enemy.style.left = Math.random() * 568 + 'px';
+      enemy.style.top = '0px';
+      gameArea.appendChild(enemy);
+
+      function moveEnemy() {
+        if (gameOver) {
+          enemy.remove();
+          return;
+        }
+        let top = parseInt(enemy.style.top);
+        top += 2;
+        enemy.style.top = top + 'px';
+        if (top > 400) {
+          // 적이 아래로 내려가면 게임 오버
+          gameOver = true;
+          scoreDiv.textContent = '게임 오버! 점수: ' + score + ' (새로고침으로 재시작)';
+          enemy.remove();
+        } else {
+          requestAnimationFrame(moveEnemy);
+        }
+      }
+      requestAnimationFrame(moveEnemy);
+      // 다음 적 생성 시간 랜덤
+      setTimeout(createEnemy, 700 + Math.random() * 1000);
+    }
+
+    createEnemy();
+  </script>
+</body>
+</html>
